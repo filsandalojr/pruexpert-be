@@ -15,9 +15,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/getCourses', [ReportsController::class, 'index']);
+Route::get('/getCourses/{id}', [ReportsController::class, 'index']);
 Route::get('/getCourseDetails/{id}', [ReportsController::class, 'getCourseDetails']);
 Route::post('/getUser', [ReportsController::class, 'getUser']);
+Route::get('/learningPaths', [ReportsController::class, 'getLearningPaths']);
 Route::post('/completeModule', [ReportsController::class, 'completeModule']);
 
 

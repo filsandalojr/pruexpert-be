@@ -33,7 +33,7 @@ class ReportsController extends Controller
         ]);
     }
     //
-    public function index()
+    public function index($id)
     {
         $query = [
             'source' => 'map',
@@ -45,15 +45,21 @@ class ReportsController extends Controller
         ];
 
         $path = storage_path().'/json/customCourse.json';
-
-        $courses = json_decode(file_get_contents($path), true);
+        $query = [
+            'source' => 'map',
+            'format' => 'json',
+        ];
+        $response = $this->client->get("learningpaths/$id/courses", [
+            'query' => $query
+        ]);
+        $courses = json_decode($response->getBody()->getContents());
 
 
         $client = $this->client;
         $sendArray = [];
         $requests = function($courses) use ($client, $query) {
             foreach($courses as $course) {
-                $courseId = $course['Id'];
+                $courseId = $course->Id;
                 // The magic happens here, with yield key => value
                 yield $course => function() use ($client, $courseId, $query) {
                     // Our identifier does not have to be included in the request URI or headers
@@ -74,7 +80,7 @@ class ReportsController extends Controller
                 // This callback is delivered each successful response
                 // $index will be our special identifier we set when generating the request
                 $json = json_decode((string)$response->getBody());
-                $this->test[$index['Id']] = $json;
+                $this->test[$index->Id] = $json;
 
             },
             'rejected' => function(\Exception $reason, $index) {
@@ -88,16 +94,17 @@ class ReportsController extends Controller
         $promise->wait();
 
         foreach ($courses as $index => $course) {
-            $courses[$index]['users'] = $this->test[$course['Id']];
-            $courses[$index]['peopleCompleted'] = 0;
-            $totalUsers = count($this->test[$course['Id']]);
-            $courses[$index]['peopleCompleted'] = 0;
-            foreach($this->test[$course['Id']] as $user) {
+            $courses[$index]->users = $this->test[$course->Id];
+            $courses[$index]->peopleCompleted = 0;
+            $totalUsers = count($this->test[$course->Id]);
+            $courses[$index]->peopleCompleted = 0;
+            foreach($this->test[$course->Id] as $user) {
                 if ($user->Completed) {
-                    $courses[$index]['peopleCompleted']++;
+                    $courses[$index]->peopleCompleted++;
                 }
             }
-            $courses[$index]['completedPercent']= round((($courses[$index]['peopleCompleted'] / $totalUsers) * 100), 0);
+
+            $courses[$index]->completedPercent =($totalUsers == 0) ? 0:round((($courses[$index]->peopleCompleted / $totalUsers) * 100), 0);
         }
 
 //        foreach($this->test as $courseId => $users) {
@@ -249,16 +256,6 @@ class ReportsController extends Controller
                 break;
             }
         }
-//        $data = [
-//            $courseId => 'CourseId',
-//            $request->id => 'UserId',
-//            100 => 'Score',
-//            1 => 'Completed',
-//            '2023-02-03' => 'UpdatedAt',
-//            'Done' => 'Note'
-//        ];
-//        $xml = new \SimpleXMLElement('<ModuleResult />');
-//        array_walk_recursive($data, array ($xml, 'addChild'));
 
         $xml = "
 <ModuleResult>
@@ -288,5 +285,77 @@ class ReportsController extends Controller
 
         return response()->json($response);
 
+    }
+
+    public function getLearningPaths()
+    {
+        $query = [
+            'source' => 'map',
+            'format' => 'json',
+        ];
+        $response = $this->client->get('learningpaths', [
+            'query' => $query
+        ]);
+        $responses = json_decode($response->getBody()->getContents());
+        $users = [];
+
+        $client = $this->client;
+        $sendArray = [];
+        $requests = function($lps) use ($client, $query) {
+            foreach($lps as $lp) {
+                $lpId = $lp->Id;
+                // The magic happens here, with yield key => value
+                yield $lp => function() use ($client, $lpId, $query) {
+                    // Our identifier does not have to be included in the request URI or headers
+                    return $client->getAsync('learningpaths/'.$lpId.'/users', [
+                        'headers' => [
+                            'X-Search-Term' => $lpId,
+                            "apikey" => "c27692cc-02df-4dc4-ae8c-3a52e25bc860",
+                        ],
+                        'query' => $query
+                    ]);
+                };
+            }
+        };
+
+        $pool = new Pool($client, $requests($responses), [
+            'concurrency' => 9999,
+            'fulfilled' => function(Response $response, $index) use (&$responses) {
+                // This callback is delivered each successful response
+                // $index will be our special identifier we set when generating the request
+                $json = json_decode((string)$response->getBody());
+                foreach($responses as $res) {
+                    if ($res->Id == $index->Id) {
+                        $res->assignedPeople = count($json);
+                        $completedCount = 0;
+                        if ($res->assignedPeople > 0) {
+                            foreach ($json as $user) {
+                                if ($user->Completed) {
+                                    $completedCount++;
+                                }
+                            }
+                            $res->peopleCompleted = $completedCount;
+                            $res->completedPercent = round((($completedCount / $res->assignedPeople) * 100), 0);
+                        } else {
+                            $res->peopleCompleted = 0;
+                            $res->completedPercent = 0;
+                        }
+
+                        $res->users = $json;
+                    }
+                }
+
+            },
+            'rejected' => function(\Exception $reason, $index) {
+                // This callback is delivered each failed request
+                echo $reason->getMessage(), "\n\n";
+            },
+        ]);
+
+        $promise = $pool->promise();
+
+        $promise->wait();
+
+        return response()->json($responses);
     }
 }
