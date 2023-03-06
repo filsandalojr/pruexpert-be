@@ -10,6 +10,7 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
 
 class ReportsController extends Controller
@@ -21,54 +22,72 @@ class ReportsController extends Controller
     protected $test;
     protected $userDetails = [];
     protected $finalCourses;
+    const APIKEYS = [
+        'sg' => 'c27692cc-02df-4dc4-ae8c-3a52e25bc860',
+        'ml' => '194f1aa1-c6cf-4478-8ca4-33ae7c3e893a'
+    ];
 
     public function __construct()
     {
+        $sg = '';
+        $ml = '';
         $this->client = new Client([
             'base_uri'=> 'https://api.litmos.com.au/v1.svc/',
-            'headers' => [
-                "apikey" => "c27692cc-02df-4dc4-ae8c-3a52e25bc860",
-            ],
             'verify' => false,
         ]);
     }
     //
-    public function index($id)
+    public function index($id, Request $request)
     {
+        $searchCourse = 'PRULeads @ PRUForce E-learning';
+        $lbu = $request->lbu;
+
         $query = [
             'source' => 'map',
             'format' => 'json',
-        ];
-        $courses = [
-            'b-8hcvRQG7M1','C12nDMrP4nU1', '6SS4-aRBRZE1', 'B-yOA8sOazY1', 'BnS87de1zTc1', 'ATXYv4v0WoQ1', 'YwGCb4riWXk1',
-            '7L7I5YbckvM1'
+            'ShowInactive=' => false
         ];
 
-        $path = storage_path().'/json/customCourse.json';
-        $query = [
-            'source' => 'map',
-            'format' => 'json',
-        ];
-        $response = $this->client->get("learningpaths/$id/courses", [
-            'query' => $query
-        ]);
-        $courses = json_decode($response->getBody()->getContents());
+        if ($id == 000) {
+            $query = [
+                'source' => 'map',
+                'search' => $searchCourse,
+                'format' => 'json'
+            ];
+            $courses = $this->client->get('courses', [
+                'query' => $query,
+                'headers' => [
+                    "apikey" => self::APIKEYS[$lbu],
+                ]
+            ]);
+
+            $courses = json_decode($courses->getBody()->getContents());
+            unset($query['search']);
+        } else {
+            $response = $this->client->get("learningpaths/$id/courses", [
+                'query' => $query,
+                'headers' => [
+                    "apikey" => self::APIKEYS[$lbu],
+                ]
+            ]);
+            $courses = json_decode($response->getBody()->getContents());
+        }
+
 
 
         $client = $this->client;
-        $sendArray = [];
-        $requests = function($courses) use ($client, $query) {
+        $requests = function($courses) use ($client, $query, $lbu) {
             foreach($courses as $course) {
                 $courseId = $course->Id;
                 // The magic happens here, with yield key => value
-                yield $course => function() use ($client, $courseId, $query) {
+                yield $course => function() use ($client, $courseId, $query, $lbu) {
                     // Our identifier does not have to be included in the request URI or headers
-                    return $client->getAsync('courses/'.$courseId.'/users', [
+                    return $client->getAsync("courses/$courseId/users", [
+                        'query' => $query,
                         'headers' => [
                             'X-Search-Term' => $courseId,
-                            "apikey" => "c27692cc-02df-4dc4-ae8c-3a52e25bc860",
-                        ],
-                        'query' => $query
+                            "apikey" => self::APIKEYS[$lbu],
+                        ]
                     ]);
                 };
             }
@@ -77,8 +96,6 @@ class ReportsController extends Controller
         $pool = new Pool($client, $requests($courses), [
             'concurrency' => 9999,
             'fulfilled' => function(Response $response, $index) {
-                // This callback is delivered each successful response
-                // $index will be our special identifier we set when generating the request
                 $json = json_decode((string)$response->getBody());
                 $this->test[$index->Id] = $json;
 
@@ -93,9 +110,12 @@ class ReportsController extends Controller
 
         $promise->wait();
 
+
+
         foreach ($courses as $index => $course) {
             $courses[$index]->users = $this->test[$course->Id];
             $courses[$index]->peopleCompleted = 0;
+            $courses[$index]->assignedPeople = count($this->test[$course->Id]);
             $totalUsers = count($this->test[$course->Id]);
             $courses[$index]->peopleCompleted = 0;
             foreach($this->test[$course->Id] as $user) {
@@ -107,30 +127,25 @@ class ReportsController extends Controller
             $courses[$index]->completedPercent =($totalUsers == 0) ? 0:round((($courses[$index]->peopleCompleted / $totalUsers) * 100), 0);
         }
 
-//        foreach($this->test as $courseId => $users) {
-//            foreach ($users as $index => $user) {
-//                $this->test[$courseId][$index]->courseId = $courseId;
-//            }
-//        }
-
-
-
-//
-
 
         return response()->json($courses);
     }
 
-    public function getCourseDetails($id)
+    public function getCourseDetails($id, Request $request)
     {
+        $lbu = $request->lbu;
         $query = [
             'source' => 'map',
             'format' => 'json',
+            'ShowInactive=' => false
         ];
 
 
         $response = $this->client->get("courses/$id/users", [
-            'query' => $query
+            'query' => $query,
+            'headers' => [
+                "apikey" => self::APIKEYS[$lbu],
+            ]
         ]);
         $users = json_decode($response->getBody()->getContents());
 
@@ -139,15 +154,15 @@ class ReportsController extends Controller
 
 
 
-        $requests = function($users) use ($client, $query, $id) {
+        $requests = function($users) use ($client, $query, $id, $lbu) {
             foreach ($users as $user) {
                 $userId = $user->Id;
-                yield $user => function() use ($client, $userId ,$query, $id) {
+                yield $user => function() use ($client, $userId ,$query, $id, $lbu) {
                     // Our identifier does not have to be included in the request URI or headers
                     return $client->getAsync('users/'.$userId.'/courses/'.$id, [
                         'headers' => [
                             'X-Search-Term' => $userId,
-                            "apikey" => "c27692cc-02df-4dc4-ae8c-3a52e25bc860",
+                            "apikey" => self::APIKEYS[$lbu],
                         ],
                         'query' => $query
                     ]);
@@ -213,7 +228,7 @@ class ReportsController extends Controller
                 $averageTime += $seconds;
             }
         }
-        $courses['completedPercent'] = round((($courses['peopleCompleted'] / $courses['assignedPeople']) * 100), 0);
+        $courses['completedPercent'] =  $courses['assignedPeople'] == 0 ? 0 : round((($courses['peopleCompleted'] / $courses['assignedPeople']) * 100), 0);
 
 
         $averageTime = $averageTime / $courses['peopleCompleted'];
@@ -223,25 +238,30 @@ class ReportsController extends Controller
         return response()->json($courses);
     }
 
-    public function getUser(Request $request)
+    public function getUser($username)
     {
         $query = [
             'source' => 'map',
             'format' => 'json',
+            'ShowInactive=' => false
         ];
-        $response = $this->client->get('users/'.$request->username, [
+        $response = $this->client->get('users/'.$username, [
             'query' => $query
         ]);
         $response = json_decode($response->getBody()->getContents());
-        return response()->json($response);
+        return $response;
     }
 
     public function completeModule(Request $request)
     {
+        $user = $this->getUser($request->username);
+
+        $user = $this->getUser($user->Id);
+
         $query = [
             'source' => 'map',
             'search' => $request->title,
-            'format' => 'json',
+            'format' => 'json'
         ];
         $courses = $this->client->get('courses', [
             'query' => $query
@@ -287,30 +307,51 @@ class ReportsController extends Controller
 
     }
 
-    public function getLearningPaths()
+    public function getLearningPaths(Request $request)
     {
+        $lps = [
+            'sg' => [
+                'Boosting Successful Engagement With PRULeads App',
+                'PRULEADS AGENCY LEADERS: BOOSTING AGENT PRODUCTIVITY WITH PRULEADS',
+                'PRULeads MasterClass Regional Conference 2022'
+            ],
+            'ml' => [
+                'Boosting Successful Engagement With PRULeads App',
+                'Boosting Agent Productivity With PRULeads'
+            ]
+        ];
+        $lbu = $request->lbu;
         $query = [
             'source' => 'map',
             'format' => 'json',
         ];
         $response = $this->client->get('learningpaths', [
-            'query' => $query
+            'query' => $query,
+            'headers' => [
+                "apikey" => self::APIKEYS[$lbu],
+            ]
         ]);
         $responses = json_decode($response->getBody()->getContents());
-        $users = [];
 
         $client = $this->client;
-        $sendArray = [];
-        $requests = function($lps) use ($client, $query) {
+
+
+        $responses = Arr::where($responses, function ($value, $key) use ($lps, $lbu) {
+            return in_array($value->Name, $lps[$lbu]);
+        });
+
+
+        $responses = array_values($responses);
+        $requests = function($lps) use ($client, $query, $lbu) {
             foreach($lps as $lp) {
                 $lpId = $lp->Id;
                 // The magic happens here, with yield key => value
-                yield $lp => function() use ($client, $lpId, $query) {
+                yield $lp => function() use ($client, $lpId, $query, $lbu) {
                     // Our identifier does not have to be included in the request URI or headers
                     return $client->getAsync('learningpaths/'.$lpId.'/users', [
                         'headers' => [
                             'X-Search-Term' => $lpId,
-                            "apikey" => "c27692cc-02df-4dc4-ae8c-3a52e25bc860",
+                            "apikey" => self::APIKEYS[$lbu],
                         ],
                         'query' => $query
                     ]);
@@ -355,6 +396,16 @@ class ReportsController extends Controller
         $promise = $pool->promise();
 
         $promise->wait();
+
+        if ($lbu === 'ml') {
+            array_push($responses, [
+                'Id' => '000',
+                'Name' => '**Courses with no Learning Paths',
+                'assignedPeople' => 0,
+                'completedPercent' => 0,
+                'peopleCompleted' => 0,
+            ]);
+        }
 
         return response()->json($responses);
     }
