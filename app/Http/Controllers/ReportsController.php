@@ -274,6 +274,9 @@ class ReportsController extends Controller
            return $user;
         }
 
+        $types = [ 'Liam', 'Mta'];
+        $uType = ucfirst(strtolower($request->type));
+
         $query = [
             'source' => 'map',
             'search' => $request->title,
@@ -335,7 +338,7 @@ class ReportsController extends Controller
             if ($e->getCode() == 404) {
                 $respBody = [
                     'code' => $e->getCode(),
-                    'msg' => "$request->username not found in database. Please contact immediate head/admin.",
+                    'msg' => "Can't complete module. User $request->username doesn't have $uType Licence"
                 ];
             } else {
                 $respBody = [
@@ -347,9 +350,6 @@ class ReportsController extends Controller
         }
         $license = json_decode($license->getBody()->getContents());
 
-        $types = [ 'Liam', 'Mta'];
-
-        $uType = ucfirst(strtolower($request->type));
 
         if (!in_array($uType, $types)) {
             return [
