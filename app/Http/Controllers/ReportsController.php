@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
@@ -245,18 +246,33 @@ class ReportsController extends Controller
             'format' => 'json',
             'ShowInactive=' => false
         ];
-        $response = $this->client->get('users/'.$username, [
-            'query' => $query
-        ]);
-        $response = json_decode($response->getBody()->getContents());
+        try {
+            $response = $this->client->get('users/'.$username, [
+                'query' => $query,
+                'headers' => [
+                    "apikey" => self::APIKEYS['ml'],
+                ]
+            ]);
+            $response = json_decode($response->getBody()->getContents());
+        } catch (ClientException $e) {
+            $response = [
+                'code' => 404,
+                'msg' => $e->getResponse()->getReasonPhrase(),
+
+            ];
+
+        }
         return $response;
+
     }
 
     public function completeModule(Request $request)
     {
         $user = $this->getUser($request->username);
 
-        $user = $this->getUser($user->Id);
+        if (is_array($user)) {
+           return $user;
+        }
 
         $query = [
             'source' => 'map',
@@ -264,11 +280,21 @@ class ReportsController extends Controller
             'format' => 'json'
         ];
         $courses = $this->client->get('courses', [
-            'query' => $query
+            'query' => $query,
+            'headers' => [
+                "apikey" => self::APIKEYS['ml'],
+            ]
         ]);
 
         $courses = json_decode($courses->getBody()->getContents());
         $courseId = '';
+
+        if (count($courses) < 1) {
+            return [
+                'code' => 404,
+                'msg' => "User $request->username is not part of Course $request->title"
+            ];
+        }
 
         foreach($courses as $course) {
             if ($course->Name == $request->title) {
@@ -276,15 +302,73 @@ class ReportsController extends Controller
                 break;
             }
         }
+        unset($query['search']);
+        $courseUsers = $this->client->get("courses/$courseId/users", [
+            'query' => $query,
+            'headers' => [
+                "apikey" => self::APIKEYS['ml'],
+            ]
+        ]);
+        $assigned = false;
+        $courseUsers =  json_decode($courseUsers->getBody()->getContents());
+
+        foreach ($courseUsers as $cUser) {
+            if ($cUser->Id == $user->Id) {
+                $assigned = true;
+            }
+        }
+
+        if (!$assigned) {
+            return [
+                'code' => 404,
+                'msg' => "User $request->username is not part of Course $request->title"
+            ];
+        }
+
+        try {
+            $license = $this->client->get("https://rtms-uat.prudential.com.sg/pamb/agents/$request->username/licenses", [
+                'headers' => [
+                    'apikey' => 'ehpst0x2lzsjzawvjx16d4r03aaa3d39',
+                ]
+            ]);
+        } catch (ClientException $e) {
+            return [
+                'code' => $e->getCode(),
+                'msg' => $e->getResponse()->getReasonPhrase(),
+            ];
+        }
+        $license = json_decode($license->getBody()->getContents());
+
+        $types = [ 'Liam', 'Mta'];
+
+        $uType = ucfirst(strtolower($request->type));
+
+        if (!in_array($uType, $types)) {
+            return [
+                'code' => 404,
+                'msg' => "Invalid License Type"
+            ];
+        }
+        $type = "has{$uType}License";
+        if (!$license->{$type}) {
+            return [
+                'code' => 500,
+                'msg' => "Can't complete module. User $request->username doesn't have $uType Licence"
+            ];
+        }
+
+
+
 
         $xml = "
 <ModuleResult>
     <CourseId>$courseId</CourseId>
-    <UserId>$request->id</UserId>
+    <UserId>$user->Id</UserId>
     <Score>100</Score>
     <Completed>1</Completed>
-    <UpdatedAt>2023-02-03</UpdatedAt>
+    <UpdatedAt>".Carbon::now()->toDateString()."</UpdatedAt>
     <Note>Done</Note>
+    <Attempts>1</Attempts>
 </ModuleResult>";
 
         $query = [
@@ -292,15 +376,26 @@ class ReportsController extends Controller
             'format' => 'json',
         ];
 
-        $response = $this->client->put( 'results/modules/'.$request->moduleId, [
-            'query' => $query,
-            'headers' => [
-                'Content-Type' => 'application/xml'
-            ],
-            'body' => $xml
-        ]);
+        try {
+             $this->client->put( 'results/modules/'.$request->moduleId, [
+                'query' => $query,
+                'headers' => [
+                    'Content-Type' => 'application/xml',
+                    "apikey" => self::APIKEYS['ml'],
+                ],
+                'body' => $xml
+            ]);
+            $response = [
+                'code' => 200,
+                'msg' => 'Successful',
+            ];
 
-        $response = json_decode($response->getBody()->getContents());
+        } catch (ClientException $e) {
+            $response = [
+                'code' => 500,
+                'msg' => $e->getResponse()->getReasonPhrase(),
+            ];
+        }
 
 
         return response()->json($response);
