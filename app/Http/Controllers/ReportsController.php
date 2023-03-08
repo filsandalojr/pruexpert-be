@@ -332,10 +332,18 @@ class ReportsController extends Controller
                 ]
             ]);
         } catch (ClientException $e) {
-            return [
-                'code' => $e->getCode(),
-                'msg' => $e->getResponse()->getReasonPhrase(),
-            ];
+            if ($e->getCode() == 404) {
+                $respBody = [
+                    'code' => $e->getCode(),
+                    'msg' => "$request->username not found in database. Please contact immediate head/admin.",
+                ];
+            } else {
+                $respBody = [
+                    'code' => $e->getCode(),
+                    'msg' => "{$e->getResponse()->getReasonPhrase()} Please contact immediate head/admin.",
+                ];
+            }
+            return $respBody;
         }
         $license = json_decode($license->getBody()->getContents());
 
@@ -356,9 +364,6 @@ class ReportsController extends Controller
                 'msg' => "Can't complete module. User $request->username doesn't have $uType Licence"
             ];
         }
-
-
-
 
         $xml = "
 <ModuleResult>
@@ -396,7 +401,6 @@ class ReportsController extends Controller
                 'msg' => $e->getResponse()->getReasonPhrase(),
             ];
         }
-
 
         return response()->json($response);
 
