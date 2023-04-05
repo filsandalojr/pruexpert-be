@@ -257,7 +257,7 @@ class ReportsController extends Controller
         } catch (ClientException $e) {
             $response = [
                 'code' => 404,
-                'msg' => $e->getResponse()->getReasonPhrase(),
+                'msg' => "",
 
             ];
 
@@ -271,6 +271,12 @@ class ReportsController extends Controller
         $user = $this->getUser($request->username);
 
         if (is_array($user)) {
+            return $response = [
+                'code' => 404,
+                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+
+            ];
            return $user;
         }
 
@@ -295,7 +301,8 @@ class ReportsController extends Controller
         if (count($courses) < 1) {
             return [
                 'code' => 404,
-                'msg' => "User $request->username is not part of Course $request->title"
+                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    Please obtain a valid license before returning to proceed with this e-learning course."
             ];
         }
 
@@ -338,7 +345,8 @@ class ReportsController extends Controller
             if ($e->getCode() == 404) {
                 $respBody = [
                     'code' => $e->getCode(),
-                    'msg' => "Can't complete module. User $request->username doesn't have $uType Licence"
+                    'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    Please obtain a valid license before returning to proceed with this e-learning course."
                 ];
             } else {
                 $respBody = [
@@ -354,14 +362,16 @@ class ReportsController extends Controller
         if (!in_array($uType, $types)) {
             return [
                 'code' => 404,
-                'msg' => "Invalid License Type"
+                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    Please obtain a valid license before returning to proceed with this e-learning course."
             ];
         }
         $type = "has{$uType}License";
         if (!$license->{$type}) {
             return [
                 'code' => 500,
-                'msg' => "Can't complete module. User $request->username doesn't have $uType Licence"
+                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    Please obtain a valid license before returning to proceed with this e-learning course."
             ];
         }
 
@@ -392,7 +402,7 @@ class ReportsController extends Controller
             ]);
             $response = [
                 'code' => 200,
-                'msg' => 'Successful',
+                'msg' => 'Great news! Your license has been successfully verified. Please click the "Next" button above to start the e-learning.',
             ];
 
         } catch (ClientException $e) {

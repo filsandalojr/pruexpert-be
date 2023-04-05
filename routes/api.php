@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\DigitalTriggerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,5 +21,9 @@ Route::get('/getCourseDetails/{id}', [ReportsController::class, 'getCourseDetail
 Route::post('/getUser', [ReportsController::class, 'getUser']);
 Route::get('/learningPaths', [ReportsController::class, 'getLearningPaths']);
 Route::post('/completeModule', [ReportsController::class, 'completeModule']);
+
+
+Route::post('/completePruexpert', [DigitalTriggerController::class, 'completeModule']);
+
 
 
