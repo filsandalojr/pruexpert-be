@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
@@ -355,9 +356,23 @@ class ReportsController extends Controller
                 ];
             }
             return $respBody;
+        } catch (ServerException $e) {
+            if ($e->getCode() == 404) {
+                $respBody = [
+                    'code' => $e->getCode(),
+                    'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    Please obtain a valid license before returning to proceed with this e-learning course."
+                ];
+            } else {
+                $respBody = [
+                    'code' => 404,
+                    'msg' => "{$e->getResponse()->getReasonPhrase()} Please contact immediate head/admin.",
+                ];
+            }
+            return $respBody;
         }
-        $license = json_decode($license->getBody()->getContents());
 
+        $license = json_decode($license->getBody()->getContents());
 
         if (!in_array($uType, $types)) {
             return [
