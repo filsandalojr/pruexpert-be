@@ -26,7 +26,7 @@ class ReportsController extends Controller
     protected $finalCourses;
     const APIKEYS = [
         'sg' => 'c27692cc-02df-4dc4-ae8c-3a52e25bc860',
-        'ml' => '194f1aa1-c6cf-4478-8ca4-33ae7c3e893a'
+        'ml' => 'f1766d17-5a58-4053-941b-e82256ee7a2d'
     ];
 
     public function __construct()
@@ -337,9 +337,9 @@ class ReportsController extends Controller
         }
 
         try {
-            $license = $this->client->get("https://rtms-uat.prudential.com.sg/pamb/agents/$request->username/licenses", [
+            $license = $this->client->get("https://rtms.prudential.com.sg/pamb/agents/$request->username/licenses", [
                 'headers' => [
-                    'apikey' => 'ehpst0x2lzsjzawvjx16d4r03aaa3d39',
+                    'apikey' => 'acaweoiatuqlgy1ebj4qvep9ou5bi6xh',
                 ]
             ]);
         } catch (ClientException $e) {
