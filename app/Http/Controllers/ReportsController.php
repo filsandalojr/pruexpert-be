@@ -323,18 +323,18 @@ class ReportsController extends Controller
         $assigned = false;
         $courseUsers =  json_decode($courseUsers->getBody()->getContents());
 
-//        foreach ($courseUsers as $cUser) {
-//            if ($cUser->Id == $user->Id) {
-//                $assigned = true;
-//            }
-//        }
-//
-//        if (!$assigned) {
-//            return [
-//                'code' => 404,
-//                'msg' => "User $request->username is not part of Course $request->title"
-//            ];
-//        }
+        foreach ($courseUsers as $cUser) {
+            if ($cUser->Id == $user->Id) {
+                $assigned = true;
+            }
+        }
+
+        if (!$assigned) {
+            return [
+                'code' => 404,
+                'msg' => "User $request->username is not part of Course $request->title"
+            ];
+        }
 
         try {
             $license = $this->client->get("https://rtms.prudential.com.sg/pamb/agents/$request->username/licenses", [
