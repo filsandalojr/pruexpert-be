@@ -274,7 +274,7 @@ class ReportsController extends Controller
         if (is_array($user)) {
             return $response = [
                 'code' => 404,
-                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course.",
 
             ];
@@ -302,7 +302,7 @@ class ReportsController extends Controller
         if (count($courses) < 1) {
             return [
                 'code' => 404,
-                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course."
             ];
         }
@@ -346,7 +346,7 @@ class ReportsController extends Controller
             if ($e->getCode() == 404) {
                 $respBody = [
                     'code' => $e->getCode(),
-                    'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course."
                 ];
             } else {
@@ -360,7 +360,7 @@ class ReportsController extends Controller
             if ($e->getCode() == 404) {
                 $respBody = [
                     'code' => $e->getCode(),
-                    'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                    'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course."
                 ];
             } else {
@@ -377,7 +377,7 @@ class ReportsController extends Controller
         if (!in_array($uType, $types)) {
             return [
                 'code' => 404,
-                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course."
             ];
         }
@@ -385,7 +385,7 @@ class ReportsController extends Controller
         if (!$license->{$type}) {
             return [
                 'code' => 500,
-                'msg' => "We're sorry to inform you that your $request->type license is invalid.
+                'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course."
             ];
         }
