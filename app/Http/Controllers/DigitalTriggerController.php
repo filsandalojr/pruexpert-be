@@ -273,10 +273,10 @@ class DigitalTriggerController extends Controller
     }
 
     public function getComments(Request $request) {
-        $lbu = $request->lbu;
+//        $lbu = $request->lbu;
         $moduleId = $request->moduleId;
 
-        $comments = VideoComment::where(['lbu' => $lbu, 'module_id' => $moduleId])->get();
+        $comments = VideoComment::where(['module_id' => $moduleId])->get();
 
         return response()->json($comments);
     }
