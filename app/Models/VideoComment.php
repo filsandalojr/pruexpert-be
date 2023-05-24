@@ -15,4 +15,13 @@ class VideoComment extends Model
         'module_id',
         'comment',
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'created_at' => 'datetime:d-m-Y H:i',
+    ];
 }

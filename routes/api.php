@@ -24,6 +24,7 @@ Route::post('/completeModule', [ReportsController::class, 'completeModule']);
 
 
 Route::post('/completePruexpert', [DigitalTriggerController::class, 'completeModule']);
+Route::get('/comments', [DigitalTriggerController::class, 'getComments']);
 
 
 

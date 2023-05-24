@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\VideoComment;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use GuzzleHttp\Client;
@@ -119,6 +120,14 @@ class DigitalTriggerController extends Controller
             ]
         ]);
 
+        VideoComment::create([
+            'username' => $request->username,
+            'course_id' => $courseId,
+            'module_id' => $request->moduleId,
+            'comment' => $request->comment,
+            'lbu' => 'PACS'
+        ]);
+
         $xml = "
 <ModuleResult>
     <CourseId>$courseId</CourseId>
@@ -135,28 +144,28 @@ class DigitalTriggerController extends Controller
             'format' => 'json',
         ];
 
-        try {
-            $this->client->put( 'results/modules/'.$request->moduleId, [
-                'query' => $query,
-                'headers' => [
-                    'Content-Type' => 'application/xml',
-                    "apikey" => self::APIKEYS['sg'],
-                ],
-                'body' => $xml
-            ]);
-            $response = [
-                'code' => 200,
-                'msg' => 'Great news! Your license has been successfully verified. Please click the "Next" button above to start the e-learning.',
-            ];
+//        try {
+//            $this->client->put( 'results/modules/'.$request->moduleId, [
+//                'query' => $query,
+//                'headers' => [
+//                    'Content-Type' => 'application/xml',
+//                    "apikey" => self::APIKEYS['sg'],
+//                ],
+//                'body' => $xml
+//            ]);
+//            $response = [
+//                'code' => 200,
+//                'msg' => 'Great news! Your license has been successfully verified. Please click the "Next" button above to start the e-learning.',
+//            ];
+//
+//        } catch (ClientException $e) {
+//            $response = [
+//                'code' => 500,
+//                'msg' => $e->getResponse()->getReasonPhrase(),
+//            ];
+//        }
 
-        } catch (ClientException $e) {
-            $response = [
-                'code' => 500,
-                'msg' => $e->getResponse()->getReasonPhrase(),
-            ];
-        }
-
-        return response()->json($response);
+//        return response()->json($response);
 
     }
 
@@ -261,5 +270,14 @@ class DigitalTriggerController extends Controller
         }
 
         return response()->json($responses);
+    }
+
+    public function getComments(Request $request) {
+        $lbu = $request->lbu;
+        $moduleId = $request->moduleId;
+
+        $comments = VideoComment::where(['lbu' => $lbu, 'module_id' => $moduleId])->get();
+
+        return response()->json($comments);
     }
 }

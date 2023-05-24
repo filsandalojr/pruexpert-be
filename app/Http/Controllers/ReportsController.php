@@ -307,12 +307,64 @@ class ReportsController extends Controller
             ];
         }
 
+
         foreach($courses as $course) {
             if ($course->Name == $request->title) {
                 $courseId = $course->Id;
                 break;
             }
         }
+
+        if ($courseId == '') {
+            $client = $this->client;
+            $requests = function($courses) use ($client, $query) {
+                foreach($courses as $course) {
+                    $courseId = $course->Id;
+                    // The magic happens here, with yield key => value
+                    yield $course => function() use ($client, $courseId, $query) {
+                        // Our identifier does not have to be included in the request URI or headers
+                        return $client->getAsync("courses/$courseId/modules", [
+                            'query' => $query,
+                            'headers' => [
+                                'X-Search-Term' => $courseId,
+                                "apikey" => self::APIKEYS['ml'],
+                            ]
+                        ]);
+                    };
+                }
+            };
+
+            $pool = new Pool($client, $requests($courses), [
+                'concurrency' => 9999,
+                'fulfilled' => function(Response $response, $index) use (&$courses) {
+                    $json = json_decode((string)$response->getBody());
+
+                    foreach ($courses as $course) {
+                        if ($course->Id == $index->Id) {
+                            $course->modules = $json;
+                        }
+                    }
+
+                },
+                'rejected' => function(\Exception $reason, $index) {
+                    // This callback is delivered each failed request
+                    echo $reason->getMessage(), "\n\n";
+                },
+            ]);
+
+            $promise = $pool->promise();
+
+            $promise->wait();
+
+            foreach ($courses as $course) {
+                foreach ($course->modules as $module) {
+                    if ($module->Id == $request->moduleId) {
+                        $courseId = $course->id;
+                    }
+                }
+            }
+        }
+
         unset($query['search']);
         $courseUsers = $this->client->get("courses/$courseId/users", [
             'query' => $query,

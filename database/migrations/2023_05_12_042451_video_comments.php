@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('course_id');
             $table->string('module_id');
             $table->text('comment')->nullable();
+            $table->enum('lbu', ['PAMB', 'PACS', 'PLUK']);
             $table->timestamps();
         });
     }
