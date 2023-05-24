@@ -14,6 +14,7 @@ use GuzzleHttp\RequestOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 
 class DigitalTriggerController extends Controller
 {
@@ -276,7 +277,23 @@ class DigitalTriggerController extends Controller
 //        $lbu = $request->lbu;
         $moduleId = $request->moduleId;
 
-        $comments = VideoComment::where(['module_id' => $moduleId])->get();
+        $comments = VideoComment::all();
+        $closestId = $comments->pluck('module_id')->pipe(function ($data) use ($moduleId) {
+            $closest = null;
+
+
+            foreach ($data as $item) {
+                if ($closest === null || abs($moduleId - $closest) > abs($item - $moduleId)) {
+
+
+                    $closest = $item;
+                }
+            }
+
+
+            return $closest;
+        });
+        $comments = VideoComment::where('module_id', $closestId)->get();
 
         return response()->json($comments);
     }
