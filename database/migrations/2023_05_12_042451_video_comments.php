@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('video_comments', function (Blueprint $table) {
             $table->id();
             $table->string('username');
+            $table->string('first_name');
+            $table->string('last_name');
             $table->string('course_id');
             $table->string('module_id');
             $table->text('comment')->nullable();

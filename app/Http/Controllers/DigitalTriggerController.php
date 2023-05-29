@@ -123,6 +123,8 @@ class DigitalTriggerController extends Controller
 
         VideoComment::create([
             'username' => $request->username,
+            'first_name' => $user->FirstName,
+            'last_name' => $user->LastName,
             'course_id' => $courseId,
             'module_id' => $request->moduleId,
             'comment' => $request->comment,
@@ -293,7 +295,7 @@ class DigitalTriggerController extends Controller
 
             return $closest;
         });
-        $comments = VideoComment::where('module_id', $closestId)->get();
+        $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->get();
 
         return response()->json($comments);
     }
