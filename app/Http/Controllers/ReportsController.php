@@ -276,6 +276,7 @@ class ReportsController extends Controller
                 'code' => 404,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course.",
+                'source' => "user"
 
             ];
            return $user;
@@ -303,7 +304,8 @@ class ReportsController extends Controller
             return [
                 'code' => 404,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'source' => "course"
             ];
         }
 
@@ -348,7 +350,8 @@ class ReportsController extends Controller
                 $respBody = [
                     'code' => $e->getCode(),
                     'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                    'source' => "rtms"
                 ];
             } else {
                 $respBody = [
@@ -362,12 +365,14 @@ class ReportsController extends Controller
                 $respBody = [
                     'code' => $e->getCode(),
                     'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                    'source' => "rtms"
                 ];
             } else {
                 $respBody = [
                     'code' => 404,
                     'msg' => "{$e->getResponse()->getReasonPhrase()} Please contact immediate head/admin.",
+                    'source' => "rtms"
                 ];
             }
             return $respBody;
@@ -379,7 +384,8 @@ class ReportsController extends Controller
             return [
                 'code' => 404,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'source' => "types"
             ];
         }
         $type = "has{$uType}License";
@@ -387,7 +393,8 @@ class ReportsController extends Controller
             return [
                 'code' => 500,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'source' => "not assigned"
             ];
         }
 
