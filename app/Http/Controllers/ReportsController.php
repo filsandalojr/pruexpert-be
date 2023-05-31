@@ -285,9 +285,11 @@ class ReportsController extends Controller
         $types = [ 'Liam', 'Mta'];
         $uType = ucfirst(strtolower($request->type));
 
+        $title = str_replace('&amp;', '&', $request->title);
+
         $query = [
             'source' => 'map',
-            'search' => $request->title,
+            'search' =>$title,
             'format' => 'json'
         ];
         $courses = $this->client->get('courses', [
@@ -299,7 +301,7 @@ class ReportsController extends Controller
 
         $courses = json_decode($courses->getBody()->getContents());
         $courseId = '';
-
+        
         if (count($courses) < 1) {
             return [
                 'code' => 404,
@@ -310,7 +312,7 @@ class ReportsController extends Controller
         }
 
         foreach($courses as $course) {
-            if ($course->Name == $request->title) {
+            if ($course->Name == $title) {
                 $courseId = $course->Id;
                 break;
             }
