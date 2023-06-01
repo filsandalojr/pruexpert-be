@@ -74,15 +74,12 @@ class DigitalTriggerController extends Controller
         if (is_array($user)) {
             return $response = [
                 'code' => 404,
-                'msg' => "We're sorry to inform you that your $request->type license is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'msg' => "<b>Error!</b> Sorry There is an issue regarding with your account. Please Refresh page",
+                'src' => "User"
 
             ];
             return $user;
         }
-
-        $types = [ 'Liam', 'Mta'];
-        $uType = ucfirst(strtolower($request->type));
 
         $query = [
             'source' => 'map',
@@ -102,8 +99,8 @@ class DigitalTriggerController extends Controller
         if (count($courses) < 1) {
             return [
                 'code' => 404,
-                'msg' => "We're sorry to inform you that your $request->type license is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                'msg' => "<b>Error!</b> Sorry There is an issue regarding with the course. Please Refresh page",
+                'src' => "Courses"
             ];
         }
 
@@ -147,28 +144,28 @@ class DigitalTriggerController extends Controller
             'format' => 'json',
         ];
 
-//        try {
-//            $this->client->put( 'results/modules/'.$request->moduleId, [
-//                'query' => $query,
-//                'headers' => [
-//                    'Content-Type' => 'application/xml',
-//                    "apikey" => self::APIKEYS['sg'],
-//                ],
-//                'body' => $xml
-//            ]);
-//            $response = [
-//                'code' => 200,
-//                'msg' => 'Great news! Your license has been successfully verified. Please click the "Next" button above to start the e-learning.',
-//            ];
-//
-//        } catch (ClientException $e) {
-//            $response = [
-//                'code' => 500,
-//                'msg' => $e->getResponse()->getReasonPhrase(),
-//            ];
-//        }
+        try {
+            $this->client->put( 'results/modules/'.$request->moduleId, [
+                'query' => $query,
+                'headers' => [
+                    'Content-Type' => 'application/xml',
+                    "apikey" => self::APIKEYS['sg'],
+                ],
+                'body' => $xml
+            ]);
+            $response = [
+                'code' => 200,
+                'msg' => 'Comment successfully submitted! Please click the "Next" button above view other comments.',
+            ];
 
-//        return response()->json($response);
+        } catch (ClientException $e) {
+            $response = [
+                'code' => 500,
+                'msg' => $e->getResponse()->getReasonPhrase(),
+            ];
+        }
+
+        return response()->json($response);
 
     }
 
