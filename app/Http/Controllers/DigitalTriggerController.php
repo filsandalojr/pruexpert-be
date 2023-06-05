@@ -292,8 +292,9 @@ class DigitalTriggerController extends Controller
 
             return $closest;
         });
-        $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->get();
+        $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->paginate();
 
+//        dd($comments);
         return response()->json($comments);
     }
 }
