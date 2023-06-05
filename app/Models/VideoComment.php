@@ -24,6 +24,6 @@ class VideoComment extends Model
      * @var array
      */
     protected $casts = [
-        'created_at' => 'datetime:d-m-Y H:i',
+        'created_at' => 'datetime:d-m-Y',
     ];
 }
