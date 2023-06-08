@@ -74,7 +74,7 @@ class DigitalTriggerController extends Controller
         if (is_array($user)) {
             return $response = [
                 'code' => 404,
-                'msg' => "<b>Error!</b> Sorry There is an issue regarding with your account. Please Refresh page",
+                'msg' => "<b>Error!</b> Please try submitting again.",
                 'src' => "User"
 
             ];
@@ -99,7 +99,7 @@ class DigitalTriggerController extends Controller
         if (count($courses) < 1) {
             return [
                 'code' => 404,
-                'msg' => "<b>Error!</b> Sorry There is an issue regarding with the course. Please Refresh page",
+                'msg' => "<b>Error!</b> Please try submitting again.",
                 'src' => "Courses"
             ];
         }
@@ -160,8 +160,9 @@ class DigitalTriggerController extends Controller
 
         } catch (ClientException $e) {
             $response = [
-                'code' => 500,
-                'msg' => $e->getResponse()->getReasonPhrase(),
+                'code' => 404,
+                'msg' => " Please try submitting again.",
+                'src' => "module"
             ];
         }
 
