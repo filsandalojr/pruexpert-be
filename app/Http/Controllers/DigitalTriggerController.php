@@ -27,7 +27,12 @@ class DigitalTriggerController extends Controller
     protected $finalCourses;
     const APIKEYS = [
         'sg' => 'c27692cc-02df-4dc4-ae8c-3a52e25bc860',
-        'ml' => '194f1aa1-c6cf-4478-8ca4-33ae7c3e893a'
+        'PAMB' => 'f1766d17-5a58-4053-941b-e82256ee7a2d',
+        'PLUK' => '945bffda-b8af-401a-b433-4ee588dba8ed',
+        'PLAI' => '949c5612-993f-40f5-aaee-ce22f5d1e4c3',
+        'PMLI' => '0b013213-1398-480c-b9ef-1046f7d8e5c8',
+        'PCLA' => 'fc6486f6-2b68-479d-96e3-353d20ffe3b5',
+        'PHKL' => '73de7a8f-ac08-41a7-b0aa-386f18d8d34e',
     ];
 
     public function __construct()
@@ -40,7 +45,7 @@ class DigitalTriggerController extends Controller
         ]);
     }
 
-    public function getUser($username)
+    public function getUser($username, $lbu)
     {
         $query = [
             'source' => 'map',
@@ -51,7 +56,7 @@ class DigitalTriggerController extends Controller
             $response = $this->client->get('users/'.$username, [
                 'query' => $query,
                 'headers' => [
-                    "apikey" => self::APIKEYS['sg'],
+                    "apikey" => self::APIKEYS[$lbu],
                 ]
             ]);
             $response = json_decode($response->getBody()->getContents());
@@ -69,7 +74,8 @@ class DigitalTriggerController extends Controller
 
     public function completeModule(Request $request)
     {
-        $user = $this->getUser($request->username);
+        $lbu = $request->type;
+        $user = $this->getUser($request->username, $lbu);
 
         if (is_array($user)) {
             return $response = [
@@ -89,7 +95,7 @@ class DigitalTriggerController extends Controller
         $courses = $this->client->get('courses', [
             'query' => $query,
             'headers' => [
-                "apikey" => self::APIKEYS['sg'],
+                "apikey" => self::APIKEYS[$lbu],
             ]
         ]);
 
@@ -114,7 +120,7 @@ class DigitalTriggerController extends Controller
         $courseUsers = $this->client->get("courses/$courseId/users", [
             'query' => $query,
             'headers' => [
-                "apikey" => self::APIKEYS['sg'],
+                "apikey" => self::APIKEYS[$lbu],
             ]
         ]);
 
@@ -149,7 +155,7 @@ class DigitalTriggerController extends Controller
                 'query' => $query,
                 'headers' => [
                     'Content-Type' => 'application/xml',
-                    "apikey" => self::APIKEYS['sg'],
+                    "apikey" => self::APIKEYS[$lbu],
                 ],
                 'body' => $xml
             ]);
