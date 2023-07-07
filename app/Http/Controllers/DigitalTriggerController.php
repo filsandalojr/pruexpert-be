@@ -131,7 +131,7 @@ class DigitalTriggerController extends Controller
             'course_id' => $courseId,
             'module_id' => $request->moduleId,
             'comment' => $request->comment,
-            'lbu' => 'PACS'
+            'lbu' => $lbu
         ]);
 
         $xml = "
@@ -287,11 +287,8 @@ class DigitalTriggerController extends Controller
         $closestId = $comments->pluck('module_id')->pipe(function ($data) use ($moduleId) {
             $closest = null;
 
-
             foreach ($data as $item) {
                 if ($closest === null || abs($moduleId - $closest) > abs($item - $moduleId)) {
-
-
                     $closest = $item;
                 }
             }
@@ -299,7 +296,14 @@ class DigitalTriggerController extends Controller
 
             return $closest;
         });
-        $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->paginate();
+
+        $least = $moduleId - 2;
+        if ($least <= $closestId && $closestId <= $moduleId) {
+            $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->paginate();
+        } else {
+            $comments = VideoComment::where('module_id', $moduleId)->orderBy('created_at', 'desc')->paginate();
+        }
+
 
 //        dd($comments);
         return response()->json($comments);
