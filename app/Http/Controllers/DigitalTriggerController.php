@@ -130,6 +130,7 @@ class DigitalTriggerController extends Controller
             'last_name' => $user->LastName,
             'course_id' => $courseId,
             'module_id' => $request->moduleId,
+            'video_no' => $request->video,
             'comment' => $request->comment,
             'lbu' => $lbu
         ]);

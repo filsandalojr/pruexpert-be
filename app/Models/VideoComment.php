@@ -15,6 +15,7 @@ class VideoComment extends Model
         'last_name',
         'course_id',
         'module_id',
+        'video_no',
         'comment',
         'lbu'
     ];
