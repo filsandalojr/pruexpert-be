@@ -299,6 +299,9 @@ class DigitalTriggerController extends Controller
         });
 
         $least = $moduleId - 2;
+        if ($request->type == 'PLUK') {
+            $least = $moduleId - 4;
+        }
         if ($least <= $closestId && $closestId <= $moduleId) {
             $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->paginate();
         } else {
