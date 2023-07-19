@@ -317,15 +317,24 @@ class DigitalTriggerController extends Controller
     public function getNexGenReports()
     {
         $results = [];
-        foreach (self::APIKEYS as $key => $value) {
-            if ($key != 'sg') {
-                for ($i = 1; $i <= 10; $i++) {
+        $response = [];
+
+
+        for ($i = 1; $i <= 10; $i++) {
+            foreach (self::APIKEYS as $key => $value) {
+                if ($key != 'sg') {
                     $vidRes = VideoComment::where(['lbu' => $key, 'video_no' => $i])->distinct()->count('username');
-                    $results[$key]["video_$i"] = $vidRes;
+                    $results[$i][$key] = $vidRes;
+
                 }
             }
+            $results[$i]['total'] = array_sum($results[$i]);
+            $results[$i]['video_no'] = "Video $i";
         }
-        return response()->json($results);
+        foreach ($results as $value) {
+            array_push($response, $value);
+        }
+        return response()->json($response);
     }
 }
 
