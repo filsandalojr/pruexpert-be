@@ -35,6 +35,7 @@ class DigitalTriggerController extends Controller
         'PHKL' => '73de7a8f-ac08-41a7-b0aa-386f18d8d34e',
     ];
 
+
     public function __construct()
     {
         $sg = '';
@@ -312,4 +313,20 @@ class DigitalTriggerController extends Controller
 //        dd($comments);
         return response()->json($comments);
     }
+
+    public function getNexGenReports()
+    {
+        $results = [];
+        foreach (self::APIKEYS as $key => $value) {
+            if ($key != 'sg') {
+                for ($i = 1; $i <= 10; $i++) {
+                    $vidRes = VideoComment::where(['lbu' => $key, 'video_no' => $i])->distinct()->count('username');
+                    $results[$key]["video_$i"] = $vidRes;
+                }
+            }
+        }
+        return response()->json($results);
+    }
 }
+
+
