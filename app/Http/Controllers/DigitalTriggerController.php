@@ -73,6 +73,56 @@ class DigitalTriggerController extends Controller
 
     }
 
+    public function completeDemoModule(Request $request)
+    {
+        $lbu = $request->type;
+        $user = $this->getUser($request->username, $lbu);
+
+        if (is_array($user)) {
+            return $response = [
+                'code' => 404,
+                'msg' => "<b>Error!</b> Please try submitting again.",
+                'src' => "User"
+
+            ];
+            return $user;
+        }
+
+        $query = [
+            'source' => 'map',
+            'search' => $request->title,
+            'format' => 'json'
+        ];
+        $courses = $this->client->get('courses', [
+            'query' => $query,
+            'headers' => [
+                "apikey" => self::APIKEYS[$lbu],
+            ]
+        ]);
+
+        $courses = json_decode($courses->getBody()->getContents());
+        $courseId = '';
+
+        if (count($courses) < 1) {
+            return [
+                'code' => 404,
+                'msg' => "<b>Error!</b> Please try submitting again.",
+                'src' => "Courses"
+            ];
+        }
+
+        foreach($courses as $course) {
+            if ($course->Name == $request->title) {
+                $courseId = $course->Id;
+                break;
+            }
+        }
+        
+        $response = $this->complete($request, $courseId, $user, $lbu);
+
+        return response()->json($response);
+    }
+
     public function completeModule(Request $request)
     {
         $lbu = $request->type;
@@ -335,6 +385,49 @@ class DigitalTriggerController extends Controller
             array_push($response, $value);
         }
         return response()->json($response);
+    }
+
+    private function complete($request, $courseId, $user, $lbu)
+    {
+        $xml = "
+<ModuleResult>
+    <CourseId>$courseId</CourseId>
+    <UserId>$user->Id</UserId>
+    <Score>100</Score>
+    <Completed>1</Completed>
+    <UpdatedAt>".Carbon::now()->toDateString()."</UpdatedAt>
+    <Note>Done</Note>
+    <Attempts>1</Attempts>
+</ModuleResult>";
+
+        $query = [
+            'source' => 'map',
+            'format' => 'json',
+        ];
+
+        try {
+            $this->client->put( 'results/modules/'.$request->moduleId, [
+                'query' => $query,
+                'headers' => [
+                    'Content-Type' => 'application/xml',
+                    "apikey" => self::APIKEYS[$lbu],
+                ],
+                'body' => $xml
+            ]);
+            $response = [
+                'code' => 200,
+                'msg' => 'Comment successfully submitted! Please click the "Next" button above view other comments.',
+            ];
+
+        } catch (ClientException $e) {
+            $response = [
+                'code' => 404,
+                'msg' => " Please try submitting again.",
+                'src' => "module"
+            ];
+        }
+
+        return $response;
     }
 }
 
