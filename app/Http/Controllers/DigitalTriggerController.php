@@ -117,7 +117,7 @@ class DigitalTriggerController extends Controller
                 break;
             }
         }
-        
+
         $response = $this->complete($request, $courseId, $user, $lbu);
 
         return response()->json($response);
@@ -334,8 +334,9 @@ class DigitalTriggerController extends Controller
     public function getComments(Request $request) {
 //        $lbu = $request->lbu;
         $moduleId = $request->moduleId;
+        $videoNo = $request->video;
 
-        $comments = VideoComment::all();
+        $comments = VideoComment::where('video_no', $videoNo)->get();
         $closestId = $comments->pluck('module_id')->pipe(function ($data) use ($moduleId) {
             $closest = null;
 
