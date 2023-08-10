@@ -483,6 +483,12 @@ class ReportsController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * should return assigned and completed
+     */
     public function getLearningPaths(Request $request)
     {
         $lps = [
@@ -558,7 +564,7 @@ class ReportsController extends Controller
                             $res->completedPercent = 0;
                         }
 
-                        $res->users = $json;
+//                        $res->users = $json;
                     }
                 }
 
