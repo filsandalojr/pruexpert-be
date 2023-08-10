@@ -557,6 +557,10 @@ class ReportsController extends Controller
                                     $completedCount++;
                                 }
                             }
+                            $res->results = [
+                              'completed' => $completedCount,
+                              'assigned' => count($json)
+                            ];
                             $res->peopleCompleted = $completedCount;
                             $res->completedPercent = round((($completedCount / $res->assignedPeople) * 100), 0);
                         } else {
@@ -589,6 +593,17 @@ class ReportsController extends Controller
             ]);
         }
 
-        return response()->json($responses);
+        $dummyResponse = [
+            'LPName 1' => [
+                'assigned' => 5,
+                'completed' => 1
+            ],
+            'LPNAME 2' => [
+                'assigned' => 10,
+                'completed' => 1
+            ]
+        ];
+
+        return response()->json($dummyResponse);
     }
 }
