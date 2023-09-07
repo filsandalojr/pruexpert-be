@@ -335,8 +335,9 @@ class DigitalTriggerController extends Controller
 //        $lbu = $request->lbu;
         $moduleId = $request->moduleId;
         $videoNo = $request->video;
+        $lbu = $request->type;
 
-        $comments = VideoComment::where('video_no', $videoNo)->get();
+        $comments = VideoComment::where(['video_no'=> $videoNo, 'lbu' => $lbu])->get();
         $closestId = $comments->pluck('module_id')->pipe(function ($data) use ($moduleId) {
             $closest = null;
 
@@ -350,16 +351,7 @@ class DigitalTriggerController extends Controller
             return $closest;
         });
 
-        $least = $moduleId - 2;
-        if ($request->type == 'PLUK') {
-            $least = $moduleId - 4;
-        }
-        if ($least <= $closestId && $closestId <= $moduleId) {
-            $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->paginate();
-        } else {
-            $comments = VideoComment::where('module_id', $moduleId)->orderBy('created_at', 'desc')->paginate();
-        }
-
+        $comments = VideoComment::where('module_id', $closestId)->orderBy('created_at', 'desc')->paginate();
 
 //        dd($comments);
         return response()->json($comments);
