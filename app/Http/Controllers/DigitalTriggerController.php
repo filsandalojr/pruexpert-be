@@ -334,7 +334,7 @@ class DigitalTriggerController extends Controller
     public function getComments(Request $request) {
 //        $lbu = $request->lbu;
         $moduleId = $request->moduleId;
-        $videoNo = $request->video;
+        $videoNo = $request->video ?? 1;
         $lbu = $request->type;
 
         $comments = VideoComment::where(['video_no'=> $videoNo, 'lbu' => $lbu])->get();
