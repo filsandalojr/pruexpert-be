@@ -363,7 +363,7 @@ class DigitalTriggerController extends Controller
         $response = [];
 
 
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 16; $i++) {
             foreach (self::APIKEYS as $key => $value) {
                 if ($key != 'sg') {
                     $vidRes = VideoComment::where(['lbu' => $key, 'video_no' => $i])->distinct()->count('username');
