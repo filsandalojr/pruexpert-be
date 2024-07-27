@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use \Log;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\RequestOptions;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Date;
+use Psr\Http\Message\RequestInterface;
 
 class ReportsController extends Controller
 {
@@ -26,16 +27,30 @@ class ReportsController extends Controller
     protected $finalCourses;
     const APIKEYS = [
         'sg' => 'c27692cc-02df-4dc4-ae8c-3a52e25bc860',
-        'ml' => 'f1766d17-5a58-4053-941b-e82256ee7a2d'
+        'ml' => '4d6c51a5-7dfd-43d7-9668-927319390899'
     ];
 
     public function __construct()
     {
-        $sg = '';
-        $ml = '';
+        $stack = HandlerStack::create();
+
+        $stack->push(Middleware::tap(
+            function (RequestInterface $request) {
+                // Log the request details
+                Log::info('Guzzle Request', [
+                    'method' => $request->getMethod(),
+                    'uri' => (string) $request->getUri(),
+                    'headers' => $request->getHeaders(),
+                    'query' => $request->getUri()->getQuery(), // Get query parameters
+                    'body' => (string) $request->getBody()
+                ]);
+            },
+        ));
+
         $this->client = new Client([
             'base_uri'=> 'https://api.litmos.com.au/v1.svc/',
             'verify' => false,
+            'handler' => $stack
         ]);
     }
     //
@@ -111,8 +126,6 @@ class ReportsController extends Controller
         $promise = $pool->promise();
 
         $promise->wait();
-
-
 
         foreach ($courses as $index => $course) {
             $courses[$index]->users = $this->test[$course->Id];
@@ -276,6 +289,7 @@ class ReportsController extends Controller
                 'code' => 404,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
                     Please obtain a valid license before returning to proceed with this e-learning course.",
+                'src' => 'user'
 
             ];
            return $user;
@@ -285,8 +299,8 @@ class ReportsController extends Controller
         $uType = ucfirst(strtolower($request->type));
 
         $query = [
-            'source' => 'map',
             'search' => $request->title,
+            'source' => 'laravel',
             'format' => 'json'
         ];
         $courses = $this->client->get('courses', [
@@ -303,7 +317,8 @@ class ReportsController extends Controller
             return [
                 'code' => 404,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'src' => 'course'
             ];
         }
 
@@ -347,12 +362,14 @@ class ReportsController extends Controller
                 $respBody = [
                     'code' => $e->getCode(),
                     'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                    'src' => 'rtms 404'
                 ];
             } else {
                 $respBody = [
                     'code' => $e->getCode(),
                     'msg' => "{$e->getResponse()->getReasonPhrase()} Please contact immediate head/admin.",
+                    'src' => 'rtms others'
                 ];
             }
             return $respBody;
@@ -361,12 +378,14 @@ class ReportsController extends Controller
                 $respBody = [
                     'code' => $e->getCode(),
                     'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                    'src' => 'rtms 404'
                 ];
             } else {
                 $respBody = [
                     'code' => 404,
                     'msg' => "{$e->getResponse()->getReasonPhrase()} Please contact immediate head/admin.",
+                    'src' => 'rtms others'
                 ];
             }
             return $respBody;
@@ -378,7 +397,8 @@ class ReportsController extends Controller
             return [
                 'code' => 404,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'src' => 'types'
             ];
         }
         $type = "has{$uType}License";
@@ -386,7 +406,8 @@ class ReportsController extends Controller
             return [
                 'code' => 500,
                 'msg' => "<b> Access Denied!</b> We're sorry to inform you that your <b>$request->type License</b> is invalid.
-                    Please obtain a valid license before returning to proceed with this e-learning course."
+                    Please obtain a valid license before returning to proceed with this e-learning course.",
+                'src' => 'not assigned'
             ];
         }
 
